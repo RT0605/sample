@@ -1,157 +1,163 @@
-"""
-このファイルは、Webアプリのメイン処理が記述されたファイルです。
-"""
-
-############################################################
-# 1. ライブラリの読み込み
-############################################################
-# 「.env」ファイルから環境変数を読み込むための関数
-from dotenv import load_dotenv
-# ログ出力を行うためのモジュール
-import logging
-# streamlitアプリの表示を担当するモジュール
 import streamlit as st
-# （自作）画面表示以外の様々な関数が定義されているモジュール
-import utils
-# （自作）アプリ起動時に実行される初期化処理が記述された関数
-from initialize import initialize
-# （自作）画面表示系の関数が定義されているモジュール
-import components as cn
-# （自作）変数（定数）がまとめて定義・管理されているモジュール
-import constants as ct
 
+# --- 定数 ---
+APP_NAME = "社内情報特化型生成AI検索アプリ"
+ANSWER_MODE_1 = "社内文書検索"
+ANSWER_MODE_2 = "社内問い合わせ"
+CHAT_INPUT_HELPER_TEXT = "こちらからメッセージを送信してください。"
 
-############################################################
-# 2. 設定関連
-############################################################
-# ブラウザタブの表示文言を設定
 st.set_page_config(
-    page_title=ct.APP_NAME
+    page_title=APP_NAME,
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-# ログ出力を行うためのロガーの設定
-logger = logging.getLogger(ct.LOGGER_NAME)
+# --- CSS（画像通りに余白やフォント調整） ---
+st.markdown("""
+    <style>
+    .block-container {
+        padding-top: 0rem;
+        padding-bottom: 0rem;
+        padding-left: 0rem;
+        padding-right: 0rem;
+    }
+    .main {
+        background-color: #fcfaf7;
+    }
+    .sidebar-style {
+        background-color: #F5F6FA;
+        min-height: 100vh;
+        height: 100%;
+        padding: 32px 18px 32px 36px;
+        border-right: 1px solid #e6e6e6;
+    }
+    .app-title {
+        text-align: center;
+        font-size: 2.3rem;
+        font-weight: bold;
+        margin-top: 28px;
+        margin-bottom: 32px;
+        letter-spacing: .02em;
+    }
+    .msg-success {
+        background: #E9F9ED;
+        color: #23492d;
+        border-radius: 7px;
+        padding: 14px 22px 14px 45px;
+        margin-bottom: 14px;
+        border-left: 8px solid #b5edcc;
+        position: relative;
+        font-size: 1.05rem;
+    }
+    .msg-success:before {
+        content: "💬";
+        position: absolute;
+        left: 15px;
+        top: 12px;
+        font-size: 1.3rem;
+    }
+    .msg-warning {
+        background: #FFF7E3;
+        color: #6b531d;
+        border-radius: 7px;
+        padding: 14px 22px 14px 45px;
+        margin-bottom: 12px;
+        border-left: 8px solid #ffe299;
+        position: relative;
+        font-size: 1.05rem;
+    }
+    .msg-warning:before {
+        content: "⚠️";
+        position: absolute;
+        left: 15px;
+        top: 11px;
+        font-size: 1.25rem;
+    }
+    .ex-section {
+        margin-top: 18px;
+        margin-bottom: 0px;
+    }
+    .ex-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin-bottom: 7px;
+        margin-top: 18px;
+    }
+    .stRadio > div {
+        gap: 8px;
+    }
+    .ex-info {
+        background: #e3f0fb;
+        color: #1d3755;
+        border-radius: 6px;
+        padding: 10px 14px;
+        margin-bottom: 8px;
+        border-left: 5px solid #93bde9;
+        font-size: 0.98rem;
+    }
+    .ex-code {
+        background: #f8f9fa;
+        color: #222;
+        border-radius: 4px;
+        padding: 8px 12px;
+        margin-top: 2px;
+        margin-bottom: 8px;
+        font-family: "Consolas", "Menlo", "monospace";
+        font-size: 0.98rem;
+        border: 1px solid #ececec;
+    }
+    .stChatInputContainer {
+        box-shadow: none !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
+# --- 2カラムレイアウト作成 ---
+col_sidebar, col_main = st.columns([0.33, 0.67])
 
-############################################################
-# 3. 初期化処理
-############################################################
-try:
-    # 初期化処理（「initialize.py」の「initialize」関数を実行）
-    initialize()
-except Exception as e:
-    # エラーログの出力
-    logger.error(f"{ct.INITIALIZE_ERROR_MESSAGE}\n{e}")
-    # エラーメッセージの画面表示
-    st.error(utils.build_error_message(ct.INITIALIZE_ERROR_MESSAGE), icon=ct.ERROR_ICON)
-    # 後続の処理を中断
-    st.stop()
+# --- 左側（サイドバー風） ---
+with col_sidebar:
+    st.markdown('<div class="sidebar-style">', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:1.23rem; font-weight:700; margin-bottom:26px;">利用目的</div>', unsafe_allow_html=True)
+    mode = st.radio(
+        "",
+        [ANSWER_MODE_1, ANSWER_MODE_2],
+        key="mode",
+        label_visibility="collapsed"
+    )
 
-# アプリ起動時のログファイルへの出力
-if not "initialized" in st.session_state:
-    st.session_state.initialized = True
-    logger.info(ct.APP_BOOT_MESSAGE)
+    # 社内文書検索の説明
+    st.markdown('<div class="ex-section"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="ex-title">「社内文書検索」を選択した場合</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ex-info">入力内容と関連性が高い社内文書のありかを検索できます。</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:1.01rem; font-weight: 500; margin-bottom:3px; margin-top:8px;">【入力例】</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ex-code">社員の育成方針に関するMTGの議事録</div>', unsafe_allow_html=True)
 
+    # 社内問い合わせの説明
+    st.markdown('<div class="ex-title">「社内問い合わせ」を選択した場合</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ex-info">質問・要望に対して、社内文書の情報をもとに回答を得られます。</div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:1.01rem; font-weight: 500; margin-bottom:3px; margin-top:8px;">【入力例】</div>', unsafe_allow_html=True)
+    st.markdown('<div class="ex-code">人事部に所属している従業員情報を一覧化して</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-############################################################
-# 4. 初期表示
-############################################################
-# タイトル表示
-cn.display_app_title()
+# --- 右側（メインエリア） ---
+with col_main:
+    st.markdown(f'<div class="app-title">{APP_NAME}</div>', unsafe_allow_html=True)
+    st.markdown('<div class="msg-success">こんにちは。私は社内文書の情報をもとに回答する生成AIチャットボットです。サイドバーで利用目的を選択し、画面下部のチャット欄からメッセージを送信してください。</div>', unsafe_allow_html=True)
+    st.markdown('<div class="msg-warning">具体的に入力したほうが期待通りの回答を得やすいです。</div>', unsafe_allow_html=True)
 
-# モード表示
-cn.display_select_mode()
+    # ここにチャット履歴を表示する場合は、追加
+    # for msg in st.session_state.get("messages", []):
+    #     with st.chat_message(msg["role"]):
+    #         st.markdown(msg["content"])
 
-# AIメッセージの初期表示
-cn.display_initial_ai_message()
+# --- チャット欄（全幅・最下部） ---
+chat_message = st.chat_input(CHAT_INPUT_HELPER_TEXT)
 
-
-############################################################
-# 5. 会話ログの表示
-############################################################
-try:
-    # 会話ログの表示
-    cn.display_conversation_log()
-except Exception as e:
-    # エラーログの出力
-    logger.error(f"{ct.CONVERSATION_LOG_ERROR_MESSAGE}\n{e}")
-    # エラーメッセージの画面表示
-    st.error(utils.build_error_message(ct.CONVERSATION_LOG_ERROR_MESSAGE), icon=ct.ERROR_ICON)
-    # 後続の処理を中断
-    st.stop()
-
-
-############################################################
-# 6. チャット入力の受け付け
-############################################################
-chat_message = st.chat_input(ct.CHAT_INPUT_HELPER_TEXT)
-
-
-############################################################
-# 7. チャット送信時の処理
-############################################################
+# チャット送信時の処理（例：履歴に追加など）
 if chat_message:
-    # ==========================================
-    # 7-1. ユーザーメッセージの表示
-    # ==========================================
-    # ユーザーメッセージのログ出力
-    logger.info({"message": chat_message, "application_mode": st.session_state.mode})
-
-    # ユーザーメッセージを表示
-    with st.chat_message("user"):
-        st.markdown(chat_message)
-
-    # ==========================================
-    # 7-2. LLMからの回答取得
-    # ==========================================
-    # 「st.spinner」でグルグル回っている間、表示の不具合が発生しないよう空のエリアを表示
-    res_box = st.empty()
-    # LLMによる回答生成（回答生成が完了するまでグルグル回す）
-    with st.spinner(ct.SPINNER_TEXT):
-        try:
-            # 画面読み込み時に作成したRetrieverを使い、Chainを実行
-            llm_response = utils.get_llm_response(chat_message)
-        except Exception as e:
-            # エラーログの出力
-            logger.error(f"{ct.GET_LLM_RESPONSE_ERROR_MESSAGE}\n{e}")
-            # エラーメッセージの画面表示
-            st.error(utils.build_error_message(ct.GET_LLM_RESPONSE_ERROR_MESSAGE), icon=ct.ERROR_ICON)
-            # 後続の処理を中断
-            st.stop()
-    
-    # ==========================================
-    # 7-3. LLMからの回答表示
-    # ==========================================
-    with st.chat_message("assistant"):
-        try:
-            # ==========================================
-            # モードが「社内文書検索」の場合
-            # ==========================================
-            if st.session_state.mode == ct.ANSWER_MODE_1:
-                # 入力内容と関連性が高い社内文書のありかを表示
-                content = cn.display_search_llm_response(llm_response)
-
-            # ==========================================
-            # モードが「社内問い合わせ」の場合
-            # ==========================================
-            elif st.session_state.mode == ct.ANSWER_MODE_2:
-                # 入力に対しての回答と、参照した文書のありかを表示
-                content = cn.display_contact_llm_response(llm_response)
-            
-            # AIメッセージのログ出力
-            logger.info({"message": content, "application_mode": st.session_state.mode})
-        except Exception as e:
-            # エラーログの出力
-            logger.error(f"{ct.DISP_ANSWER_ERROR_MESSAGE}\n{e}")
-            # エラーメッセージの画面表示
-            st.error(utils.build_error_message(ct.DISP_ANSWER_ERROR_MESSAGE), icon=ct.ERROR_ICON)
-            # 後続の処理を中断
-            st.stop()
-
-    # ==========================================
-    # 7-4. 会話ログへの追加
-    # ==========================================
-    # 表示用の会話ログにユーザーメッセージを追加
-    st.session_state.messages.append({"role": "user", "content": chat_message})
-    # 表示用の会話ログにAIメッセージを追加
-    st.session_state.messages.append({"role": "assistant", "content": content})
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = []
+    st.session_state["messages"].append({"role": "user", "content": chat_message})
+    # ここでAIのレスポンスを追加してもOK
+    # st.session_state["messages"].append({"role": "assistant", "content": "AIの回答"})

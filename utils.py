@@ -15,13 +15,11 @@ from langchain.chains import create_history_aware_retriever, create_retrieval_ch
 from langchain.chains.combine_documents import create_stuff_documents_chain
 import constants as ct
 
-
 ############################################################
 # 設定関連
 ############################################################
 # 「.env」ファイルで定義した環境変数の読み込み
 load_dotenv()
-
 
 ############################################################
 # 関数定義
@@ -45,6 +43,20 @@ def get_source_icon(source):
     
     return icon
 
+def get_file_display_name(file_path, page_number=None):
+    """
+    PDFファイルの場合はページ番号付きで返す
+    Args:
+        file_path: ファイルパス（str）
+        page_number: 0スタートのページ番号（intまたはNone）
+    Returns:
+        str: 表示用のファイルパス
+    """
+    if file_path.endswith('.pdf') and page_number is not None:
+        # ページ番号は1始まりで表示
+        return f"{file_path}（ページNo.{page_number + 1}）"
+    else:
+        return file_path
 
 def build_error_message(message):
     """
@@ -57,7 +69,6 @@ def build_error_message(message):
         エラーメッセージと管理者問い合わせテンプレートの連結テキスト
     """
     return "\n".join([message, ct.COMMON_ERROR_MESSAGE])
-
 
 def get_llm_response(chat_message):
     """
