@@ -20,13 +20,11 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 import constants as ct
 
-
 ############################################################
 # 設定関連
 ############################################################
 # 「.env」ファイルで定義した環境変数の読み込み
 load_dotenv()
-
 
 ############################################################
 # 関数定義
@@ -44,7 +42,6 @@ def initialize():
     initialize_logger()
     # RAGのRetrieverを作成
     initialize_retriever()
-
 
 def initialize_logger():
     """
@@ -68,12 +65,6 @@ def initialize_logger():
         encoding="utf8"
     )
     # 出力するログメッセージのフォーマット定義
-    # - 「levelname」: ログの重要度（INFO, WARNING, ERRORなど）
-    # - 「asctime」: ログのタイムスタンプ（いつ記録されたか）
-    # - 「lineno」: ログが出力されたファイルの行番号
-    # - 「funcName」: ログが出力された関数名
-    # - 「session_id」: セッションID（誰のアプリ操作か分かるように）
-    # - 「message」: ログメッセージ
     formatter = logging.Formatter(
         f"[%(levelname)s] %(asctime)s line %(lineno)s, in %(funcName)s, session_id={st.session_state.session_id}: %(message)s"
     )
@@ -88,7 +79,6 @@ def initialize_logger():
     # ロガー（ログメッセージを実際に生成するオブジェクト）に追加してログ出力の最終設定
     logger.addHandler(log_handler)
 
-
 def initialize_session_id():
     """
     セッションIDの作成
@@ -96,7 +86,6 @@ def initialize_session_id():
     if "session_id" not in st.session_state:
         # ランダムな文字列（セッションID）を、ログ出力用に作成
         st.session_state.session_id = uuid4().hex
-
 
 def initialize_retriever():
     """
@@ -123,8 +112,8 @@ def initialize_retriever():
     
     # チャンク分割用のオブジェクトを作成
     text_splitter = CharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=50,
+        chunk_size=ct.CHUNK_SIZE,
+        chunk_overlap=ct.CHUNK_OVERLAP,
         separator="\n"
     )
 
@@ -135,8 +124,7 @@ def initialize_retriever():
     db = Chroma.from_documents(splitted_docs, embedding=embeddings)
 
     # ベクターストアを検索するRetrieverの作成
-    st.session_state.retriever = db.as_retriever(search_kwargs={"k": 3})
-
+    st.session_state.retriever = db.as_retriever(search_kwargs={"k": ct.RETRIEVER_SEARCH_K})
 
 def initialize_session_state():
     """
@@ -147,7 +135,6 @@ def initialize_session_state():
         st.session_state.messages = []
         # 「LLMとのやりとり用」の会話ログを順次格納するリストを用意
         st.session_state.chat_history = []
-
 
 def load_data_sources():
     """
@@ -175,7 +162,6 @@ def load_data_sources():
 
     return docs_all
 
-
 def recursive_file_check(path, docs_all):
     """
     RAGの参照先となるデータソースの読み込み
@@ -198,7 +184,6 @@ def recursive_file_check(path, docs_all):
         # パスがファイルの場合、ファイル読み込み
         file_load(path, docs_all)
 
-
 def file_load(path, docs_all):
     """
     ファイル内のデータ読み込み
@@ -218,7 +203,6 @@ def file_load(path, docs_all):
         loader = ct.SUPPORTED_EXTENSIONS[file_extension](path)
         docs = loader.load()
         docs_all.extend(docs)
-
 
 def adjust_string(s):
     """
