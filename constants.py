@@ -8,7 +8,6 @@
 from langchain_community.document_loaders import PyMuPDFLoader, Docx2txtLoader, TextLoader
 from langchain_community.document_loaders.csv_loader import CSVLoader
 
-
 ############################################################
 # 共通変数の定義
 ############################################################
@@ -26,7 +25,6 @@ WARNING_ICON = ":material/warning:"
 ERROR_ICON = ":material/error:"
 SPINNER_TEXT = "回答生成中..."
 
-
 # ==========================================
 # ログ出力系
 # ==========================================
@@ -35,13 +33,11 @@ LOGGER_NAME = "ApplicationLog"
 LOG_FILE = "application.log"
 APP_BOOT_MESSAGE = "アプリが起動されました。"
 
-
 # ==========================================
 # LLM設定系
 # ==========================================
 MODEL = "gpt-4o-mini"
 TEMPERATURE = 0.5
-
 
 # ==========================================
 # RAG参照用のデータソース系
@@ -50,7 +46,8 @@ RAG_TOP_FOLDER_PATH = "./data"
 SUPPORTED_EXTENSIONS = {
     ".pdf": PyMuPDFLoader,
     ".docx": Docx2txtLoader,
-    ".csv": lambda path: CSVLoader(path, encoding="utf-8")
+    ".csv": lambda path: CSVLoader(path, encoding="utf-8"),
+    ".txt": TextLoader,  # ← ここを追加！
 }
 WEB_URL_LOAD_TARGETS = [
     "https://generative-ai.web-camp.io/"
@@ -96,13 +93,11 @@ SYSTEM_PROMPT_INQUIRY = """
     {context}
 """
 
-
 # ==========================================
 # LLMレスポンスの一致判定用
 # ==========================================
 INQUIRY_NO_MATCH_ANSWER = "回答に必要な情報が見つかりませんでした。"
 NO_DOC_MATCH_ANSWER = "該当資料なし"
-
 
 # ==========================================
 # エラー・警告メッセージ
